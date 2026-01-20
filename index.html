@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>Untitled</title>
+    
+
+  </head>
+    
+  <body>
+  <!DOCTYPE html>
+
+<html lang="zh-TW">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <title>倒計時我愛你</title>
+
+    <style>
+
+        :root {
+
+            --deep-blue: #1e88e5;
+
+            --box-bg: rgba(255, 255, 255, 0.95);
+
+        }
+
+        body, html { 
+
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; 
+
+            font-family: "Microsoft JhengHei", sans-serif;
+
+            /* --- [背景圖位子] --- */
+
+            background: #e3f2fd url('這裡換成背景圖片網址') no-repeat center center;
+
+            background-size: cover;
+
+        }
+
+        
+
+        .screen { position: fixed; width: 100%; height: 100%; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+
+        #cover-screen { background: linear-gradient(135deg, #90caf9 0%, #e3f2fd 100%); }
+
+        #end-screen { background: rgba(0,0,0,0.85); display: none; }
+
+        #blessing-screen { background: linear-gradient(135deg, #ffafbd 0%, #ffc3a0 100%); display: none; color: white; text-align: center; }
+
+        .menu-box { position: absolute; bottom: 40px; left: 20px; display: flex; flex-direction: column; gap: 10px; }
+
+        .menu-btn { background: rgba(255,255,255,0.3); border: 1px solid white; color: white; padding: 8px 20px; border-radius: 5px; font-size: 14px; width: 100px; text-align: left; }
+
+        #head-num { position: fixed; top: 15%; left: 50%; transform: translateX(-50%); font-size: 100px; font-weight: bold; color: rgba(255,255,255,0.6); z-index: 1; pointer-events: none; }
+
+        #char-layer { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); height: 60vh; z-index: 2; transition: 0.3s; }
+
+        #save-btn { position: fixed; top: 15px; right: 15px; z-index: 500; background: rgba(255,255,255,0.6); border: none; padding: 6px 15px; border-radius: 5px; font-size: 12px; font-weight: bold; }
+
+        #dialogue-container {
+
+            position: fixed; bottom: 20px; left: 5%; width: 90%;
+
+            background: var(--box-bg); border-bottom: 5px solid var(--deep-blue);
+
+            padding: 22px 20px; box-sizing: border-box; min-height: 110px; z-index: 20;
+
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+
+        }
+
+        #name-tag { position: absolute; top: -14px; left: 10px; background: var(--deep-blue); color: white; padding: 3px 15px; border-radius: 4px; font-weight: bold; font-size: 15px; display: none; }
+
+        #main-text { font-size: 17px; line-height: 1.6; color: #333; min-height: 1.6em; white-space: pre-wrap; }
+
+        .click-hint { position: absolute; bottom: 8px; right: 15px; font-size: 11px; color: #aaa; animation: blink 1.5s infinite; }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        #options-box { position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 12px; width: 80%; z-index: 100; }
+
+        .opt-btn { background: white; color: var(--deep-blue); padding: 15px; border: 1px solid var(--deep-blue); border-radius: 8px; text-align: center; font-size: 15px; font-weight: bold; }
+
+    </style>
+
+</head>
+
+<body>
+
+<div id="cover-screen" class="screen">
+
+    <div style="font-size:32px; color:white; font-weight:bold; margin-bottom:120px;">倒計時我愛你</div>
+
+    <div class="menu-box">
+
+        <button class="menu-btn" onclick="startGame()">開始遊戲</button>
+
+        <button class="menu-btn" onclick="continueGame()">繼續遊戲</button>
+
+    </div>
+
+</div>
+
+<div id="end-screen" class="screen">
+
+    <div style="font-size:28px; color:white; margin-bottom:60px; font-weight:bold;">故事完結</div>
+
+    <div class="menu-box">
+
+        <button class="menu-btn" onclick="startGame()">重新開始</button>
+
+        <button class="menu-btn" onclick="showBlessing()">結束</button>
+
+        <button class="menu-btn" onclick="backToMain()">退出</button>
+
+    </div>
+
+</div>
+
+<div id="blessing-screen" class="screen">
+
+    <p style="font-size:20px; line-height:2.2; font-weight:bold;">祝惟潣和所有16批<br>情人節快樂～!</p>
+
+    <button class="menu-btn" style="margin-top:50px; text-align:center; align-self:center;" onclick="backToMain()">回到主頁</button>
+
+</div>
+
+<button id="save-btn" style="display:none;" onclick="saveGame()">存档</button>
+
+<div id="head-num"></div>
+
+<img id="char-layer" src="" style="display:none;">
+
+<div id="game-ui" style="display:none;" onclick="handleNext()">
+
+    <div id="dialogue-container">
+
+        <div id="name-tag"></div>
+
+        <div id="main-text"></div>
+
+        <div class="click-hint">CLICK TO NEXT</div>
+
+    </div>
+
+    <div id="options-box"></div>
+
+</div>
+
+<script>
+
+    let currentKey = "ch0_1";
+
+    let isTyping = false;
+
+    let score = 0; // 用於判定隱藏結局
+
+    const script = {
+
+        // --- CHAPTER 0 (Day 10) ---
+
+        ch0_1: { name: "", text: "練習室裡只剩下音樂回放的餘音。", next: "ch0_2", num: 10 },
+
+        ch0_2: { name: "", text: "李京民彎腰撿起掉在地上的水瓶，發梢垂下來。", next: "ch0_3" },
+
+        ch0_3: { name: "", text: "就在那一瞬間，申正煥看見了他頭頂浮著一個清晰又刺眼的數字 10。", next: "ch0_4" },
+
+        ch0_4: { name: "", text: "申正煥一開始以為自己眼花了。", next: "ch0_inner1" },
+
+        ch0_inner1: { name: "申正煥", text: "「這是什麼？好感度嗎？」", next: "ch0_inner2" },
+
+        ch0_inner2: { name: "申正煥", text: "「……滿分？」", next: "ch0_5" },
+
+        ch0_5: { name: "", text: "他忍不住多看了一眼。原來京民這麼喜歡我啊。", next: "ch0_6" },
+
+        ch0_6: { name: "", text: "這個念頭剛成形，他自己都愣了一下。", next: "ch0_opt" },
+
+        ch0_opt: { type: "opt", options: [
+
+            { text: "【裝作什麼都不看見】", next: "ch1_1" },
+
+            { text: "【盯著數字多看幾秒】", next: "ch1_1" }
+
+        ]},
+
+        // --- CHAPTER 1 (Day 9-8) ---
+
+        ch1_1: { name: "", text: "第二天，申正煥下意識去找李京民。", next: "ch1_2", num: 9 },
+
+        ch1_2: { name: "", text: "數字變成了 9。他心裡一頓，卻說不出原因。", next: "ch1_3" },
+
+        ch1_3: { name: "", text: "第三天，數字又變成 8。申正煥終於意識到，這不是偶然。", next: "ch1_4", num: 8 },
+
+        ch1_4: { name: "", text: "他開始注意李京民所有細微的變化——", next: "ch1_5" },
+
+        ch1_5: { name: "", text: "說話的語氣、回消息的速度、和別人站得有多近。", next: "ch1_opt" },
+
+        ch1_opt: { type: "opt", options: [
+
+            { text: "【問他最近是不是很忙】", next: "ch1_res1" },
+
+            { text: "【不問，只靠近】", next: "ch1_res2" }
+
+        ]},
+
+        ch1_res1: { name: "李京民", text: "「最近就練習、吃飯、睡覺……和平時一樣。」", next: "ch2_1" },
+
+        ch1_res2: { name: "", text: "兩個人的距離變近，李京民感覺到了，但他並沒有躲開。", next: "ch2_1" },
+
+        // --- CHAPTER 2 (Day 6) ---
+
+        ch2_1: { name: "", text: "休息室裡很安靜。李京民盤腿坐在地上拆零食。", next: "ch2_2", num: 6 },
+
+        ch2_2: { name: "", text: "申正煥走近時，看見他頭頂的數字—— 6。", next: "ch2_3" },
+
+        ch2_3: { name: "", text: "眉頭幾乎是立刻皺起來的。", next: "ch2_dia1" },
+
+        ch2_dia1: { name: "申正煥", text: "「你怎麼又自己吃？」", next: "ch2_dia2" },
+
+        ch2_dia2: { name: "李京民", text: "「哥不是剛吃過嗎？」", next: "ch2_dia3" },
+
+        ch2_dia3: { name: "申正煥", text: "「我不能再吃一次？」", next: "ch2_4" },
+
+        ch2_4: { name: "", text: "他說著已經坐到了李京民身邊，動作自然得不像刻意。", next: "ch2_5" },
+
+        ch2_5: { name: "", text: "李京民看了一眼，把零食袋推到中間。", next: "ch2_dia4" },
+
+        ch2_dia4: { name: "李京民", text: "「那一起吧。」", next: "ch2_inner1" },
+
+        ch2_inner1: { name: "申正煥", text: "（內心：這麼乖，怎麼會不喜歡我了？）", next: "ch2_opt" },
+
+        ch2_opt: { type: "opt", options: [
+
+            { text: "【搶走最後一口零食】", next: "ch2_res1" },
+
+            { text: "【把零食餵到他嘴邊】", next: "ch2_res2" }
+
+        ]},
+
+        ch2_res1: { name: "李京民", text: "李京民無奈地笑了一下：「哥幼不幼稚。」", next: "ch3_1" },
+
+        ch2_res2: { name: "李京民", text: "李京民愣住，猶豫了一下，還是乖乖張嘴咬住。", next: "ch3_1", effect: () => score++ },
+
+        // --- CHAPTER 3 (Day 5-4) ---
+
+        ch3_1: { name: "", text: "從那天開始，申正煥幾乎下意識地出現在李京民身邊。", next: "ch3_2", num: 5 },
+
+        ch3_2: { name: "", text: "一起吃飯，一起走路，一起坐在角落裡等時間過去。", next: "ch3_3", num: 4 },
+
+        ch3_3: { name: "", text: "像是不這樣做，心裡就會空一塊。", next: "ch3_opt" },
+
+        ch3_opt: { type: "opt", options: [
+
+            { text: "【要求一起回宿舍】", next: "ch3_res1" },
+
+            { text: "【假裝順路】", next: "ch3_res2" }
+
+        ]},
+
+        ch3_res1: { name: "", text: "申正煥走在外側，步伐刻意放慢，確保李京民在視線內。", next: "ch4_1" },
+
+        ch3_res2: { name: "", text: "李京民會在路口等他，像是早就預料到他會出現。", next: "ch4_1" },
+
+        // --- CHAPTER 4 (Day 3) ---
+
+        ch4_1: { name: "", text: "深夜的宿舍客廳，燈光昏暗。李京民坐在沙發一角，抱著靠墊。", next: "ch4_2", num: 3 },
+
+        ch4_2: { name: "", text: "申正煥走過去，看見他頭頂的數字—— 3。心臟猛地一沈。", next: "ch4_dia1" },
+
+        ch4_dia1: { name: "申正煥", text: "「你以後……會一直在我身邊吧？」", next: "ch4_dia2" },
+
+        ch4_dia2: { name: "李京民", text: "「哥為什麼突然這樣說？」", next: "ch4_dia3" },
+
+        ch4_dia3: { name: "申正煥", text: "「我就是想確認。」", next: "ch4_4" },
+
+        ch4_4: { name: "", text: "短暫的沉默後，李京民輕輕開口。", next: "ch4_dia4" },
+
+        ch4_dia4: { name: "李京民", text: "「如果哥需要的話，我會在。」", next: "ch4_5" },
+
+        ch4_5: { name: "", text: "那一瞬間，申正煥幾乎要脫口而出所有真心話。", next: "ch4_opt" },
+
+        ch4_opt: { type: "opt", options: [
+
+            { text: "【伸手揉他的頭】", next: "ch4_res1" },
+
+            { text: "【什麼都不做，只靠近】", next: "ch4_res2" }
+
+        ]},
+
+        ch4_res1: { name: "", text: "申正煥伸手揉了揉李京民的頭髮，李京民的耳朵慢慢紅了。", next: "ch5_1" },
+
+        ch4_res2: { name: "", text: "空氣變得安靜而黏稠，誰也沒有說話。", next: "ch5_1", effect: () => score++ },
+
+        // --- CHAPTER 5 (Day 2-1) ---
+
+        ch5_1: { name: "", text: "數字一天比一天小。申正煥開始失眠。", next: "ch5_2", num: 2 },
+
+        ch5_2: { name: "", text: "躺在床上，反覆想著同一個問題——", next: "ch5_3", num: 1 },
+
+        ch5_3: { name: "", text: "如果明天真的歸零了，他要怎麼辦？", next: "ch5_opt" },
+
+        ch5_opt: { type: "opt", options: [
+
+            { text: "【再等等】", next: "end_a_1" },
+
+            { text: "【不能再等了】", next: "end_check" }
+
+        ]},
+
+        // --- ENDINGS ---
+
+        end_a_1: { name: "", text: "那天，數字終於變成 0。申正煥還沒來得及開口……", next: "end_a_2", num: 0 },
+
+        end_a_2: { name: "", text: "李京民先一步停下腳步。", next: "end_a_dia" },
+
+        end_a_dia: { name: "李京民", text: "「哥，我有話想說。」\n「我喜歡你。」", next: "end_a_3" },
+
+        end_a_3: { name: "申正煥", text: "申正煥怔在原地。直到此刻他才明白，倒計時不是失去，而是靠近。", next: "FINISH" },
+
+        
+
+        end_check: { type: "logic", logic: () => (score >= 2) ? "end_b_1" : "end_a_1" },
+
+        end_b_1: { name: "申正煥", text: "「京民，我有話要說。」\n聲音緊張得不像他自己。", next: "end_b_2", num: 0 },
+
+        end_b_2: { name: "", text: "當他抬頭時，數字已經清零。他心裡猛地一空。", next: "end_b_3" },
+
+        end_b_3: { name: "李京民", text: "李京民輕聲說：「哥……我本來今天也要說的。」", next: "end_b_4" },
+
+        end_b_4: { name: "", text: "兩個人同時笑了。數字不再出現。", next: "FINISH" },
+
+        FINISH: { name: "", text: "因為想說的話，已經都說出口了。", next: "SHOW_END_SCREEN" }
+
+    };
+
+    function startGame() {
+
+        currentKey = "ch0_1"; score = 0;
+
+        localStorage.removeItem('save_key');
+
+        hideAll();
+
+        document.getElementById('game-ui').style.display = 'block';
+
+        document.getElementById('save-btn').style.display = 'block';
+
+        render(currentKey);
+
+    }
+
+    function continueGame() {
+
+        const saved = localStorage.getItem('save_key');
+
+        if (saved) { currentKey = saved; hideAll(); document.getElementById('game-ui').style.display = 'block'; document.getElementById('save-btn').style.display = 'block'; render(currentKey); } 
+
+        else { startGame(); }
+
+    }
+
+    function saveGame() { localStorage.setItem('save_key', currentKey); alert('存檔成功'); }
+
+    function backToMain() { hideAll(); document.getElementById('cover-screen').style.display = 'flex'; }
+
+    function showBlessing() { hideAll(); document.getElementById('blessing-screen').style.display = 'flex'; }
+
+    function hideAll() { const ids = ['cover-screen', 'end-screen', 'blessing-screen', 'game-ui', 'save-btn']; ids.forEach(id => document.getElementById(id).style.display = 'none'); }
+
+    function render(key) {
+
+        if (key === "SHOW_END_SCREEN") { hideAll(); document.getElementById('end-screen').style.display = 'flex'; return; }
+
+        const d = script[key];
+
+        if (d.type === "logic") { render(d.logic()); return; } // 處理邏輯判定
+
+        if (d.effect) d.effect(); // 處理數值增加
+
+        const tag = document.getElementById('name-tag');
+
+        const text = document.getElementById('main-text');
+
+        const optBox = document.getElementById('options-box');
+
+        const charImg = document.getElementById('char-layer');
+
+        
+
+        text.innerText = ""; optBox.innerHTML = "";
+
+        if (d.num !== undefined) document.getElementById('head-num').innerText = d.num;
+
+        if (d.img) { charImg.src = d.img; charImg.style.display = 'block'; } else { charImg.style.display = 'none'; }
+
+        if (d.type === "opt") {
+
+            tag.style.display = 'none';
+
+            d.options.forEach(o => {
+
+                const b = document.createElement('div'); b.className = 'opt-btn'; b.innerText = o.text;
+
+                b.onclick = (e) => { e.stopPropagation(); currentKey = o.next; render(currentKey); };
+
+                optBox.appendChild(b);
+
+            });
+
+        } else {
+
+            if (d.name) { tag.innerText = d.name; tag.style.display = 'block'; } else { tag.style.display = 'none'; }
+
+            isTyping = true;
+
+            let i = 0;
+
+            let timer = setInterval(() => {
+
+                text.innerText += d.text[i++];
+
+                if (i >= d.text.length) { clearInterval(timer); isTyping = false; }
+
+            }, 30);
+
+        }
+
+    }
+
+    function handleNext() {
+
+        if (isTyping || script[currentKey].type === "opt") return;
+
+        currentKey = script[currentKey].next;
+
+        render(currentKey);
+
+    }
+
+</script>
+
+</body>
+
+</html>
+    
+  </body>
+  
+</html>
